@@ -2,6 +2,8 @@ from os import listdir
 from os.path import isdir, isfile, join
 from optparse import OptionParser
 import sys
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def get_name(extension):
@@ -83,10 +85,8 @@ def get_name(extension):
         return "Web App Manifest"
     elif extension == 'countignore':
         return "Count Ignore"
-    elif extension == '':
-        return ""
-    elif extension == '':
-        return ""
+    elif extension == 'LICENSE':
+        return "License"
     else:
         return extension.upper() + " File"
 
@@ -112,30 +112,18 @@ def count_lines(filename):
     return file_lines
 
 
-# def get_path():
-#     argc = len(sys.argv)
-#     if argc < 2:
-#         return "."
-#     else:
-#         return sys.argv[1]
-
-
 def get_directories(base_path):
     dirs = []
     try:
         for directory in listdir(base_path):
-            # try:
             if isdir(join(base_path, directory)):
                 dirs.append(join(base_path, directory))
-            # except Exception as e:
-            #     print(e)
         return dirs
     except FileNotFoundError:
         print("Error: Path not found.", file=sys.stderr)
         exit(1)
     except Exception as e:
         return []
-    # return [join(base_path, directory) for directory in listdir(base_path) if isdir(join(base_path, directory))]
 
 
 def read_directories(directories_list, ignores, verbose, zero):
@@ -165,11 +153,7 @@ def read_directories(directories_list, ignores, verbose, zero):
         for file in files:
             results.append((file, count_lines(join(directory, file))))
 
-        if not results:
-            pass
-            # print("---------- {} ----------".format(directory))
-            # print("Directory is empty")
-        else:
+        if results:
             max_lines = len(str(max([result[1] for result in results])) + " lines")
             longest_file_name = max([len(filename) for filename in files])
             if zero:
@@ -212,11 +196,7 @@ def read_directories_ext(directories_list, ignores, verbose, extensions, zero):
         for file in files:
             results.append((file, count_lines(join(directory, file))))
 
-        if not results:
-            pass
-            # print("---------- {} ----------".format(directory))
-            # print("Directory is empty")
-        else:
+        if results:
             max_lines = len(str(max([result[1] for result in results])) + " lines")
             longest_file_name = max([len(filename) for filename in files])
             if zero:
@@ -226,11 +206,7 @@ def read_directories_ext(directories_list, ignores, verbose, extensions, zero):
             num_lines += sum([result[1] for result in results])
 
             for result in results:
-                # if result[0][0] != '.':
                 ext = result[0].split('.')[-1]
-                # else:
-                #     print(result[0])
-                #     ext = "Other"
 
                 if ext in extensions:
                     extensions[ext][0] += result[1]
@@ -260,29 +236,52 @@ def print_totals_ext(extensions, total_lines, total_files, zero):
         extensions = sorted([ext for ext in extensions.items()], key=lambda x: x[1][0], reverse=True)
     else:
         extensions = sorted([ext for ext in extensions.items() if ext[1][0] != 0], key=lambda x: x[1][0], reverse=True)
-    line_width = 100
-    print("-" * line_width)
-    header_padding = " " * int((line_width - len("LANGUAGE  FILES LINES")) / 2)
-    print("LANGUAGE {} FILES {} LINES".format(header_padding, header_padding))
-    print("-" * line_width)
-    for extension in extensions:
-        padding = " " * (len("LANGUAGE {} FILES".format(header_padding)) - len(get_name(extension[0]))
-                         - len(str(extension[1][1])) - 2)
-        rest = " " * (line_width -
-                      len("{} {}  {}".format(get_name(extension[0]), padding, extension[1][1], extension[1][0]))
-                      - len(str(extension[1][0])) - 1)
-        # padding = " " * (line_width - len("{} {} {}".format(get_name(extension[0]), extension[1][1], extension[1][0])))
-        print("{} {} {} {} {}".format(get_name(extension[0]), padding, extension[1][1], rest, extension[1][0]))
 
-    print("-" * line_width)
-    padding = " " * (len("LANGUAGE {} FILES".format(header_padding)) - len("SUM")
-                     - len(str(total_files)) - 2)
-    rest = " " * (line_width -
-                  len("{} {}  {}".format("SUM", padding, total_files, total_lines))
-                  - len(str(total_lines)) - 1)
-    # padding = " " * (line_width - len("{} {} {}".format(get_name(extension[0]), extension[1][1], extension[1][0])))
-    print("{} {} {} {} {}".format("SUM", padding, total_files, rest, total_lines))
-    print("-" * line_width)
+    if options.graph:
+        extension_names = [get_name(extension[0]) for extension in extensions]
+        extension_lines = [extension[1][0] for extension in extensions]
+        extension_files = [extension[1][1] for extension in extensions]
+        extension_names.reverse()
+        extension_lines.reverse()
+        extension_files.reverse()
+
+        y_pos = np.arange(len(extension_names))
+
+        plt.subplot(221)
+        plt.bar(y_pos, extension_lines)
+        plt.xticks(y_pos, extension_names)
+        plt.ylabel('Lines')
+        plt.title('Lines per extension')
+
+        plt.subplot(224)
+        plt.bar(y_pos, extension_files)
+        plt.xticks(y_pos, extension_files)
+        plt.ylabel('Files')
+        plt.title('Files per extension')
+
+        plt.show()
+    else:
+        line_width = 100
+        print("-" * line_width)
+        header_padding = " " * int((line_width - len("LANGUAGE  FILES LINES")) / 2)
+        print("LANGUAGE {} FILES {} LINES".format(header_padding, header_padding))
+        print("-" * line_width)
+        for extension in extensions:
+            padding = " " * (len("LANGUAGE {} FILES".format(header_padding)) - len(get_name(extension[0]))
+                             - len(str(extension[1][1])) - 2)
+            rest = " " * (line_width -
+                          len("{} {}  {}".format(get_name(extension[0]), padding, extension[1][1], extension[1][0]))
+                          - len(str(extension[1][0])) - 1)
+            print("{} {} {} {} {}".format(get_name(extension[0]), padding, extension[1][1], rest, extension[1][0]))
+
+        print("-" * line_width)
+        padding = " " * (len("LANGUAGE {} FILES".format(header_padding)) - len("SUM")
+                         - len(str(total_files)) - 2)
+        rest = " " * (line_width -
+                      len("{} {}  {}".format("SUM", padding, total_files, total_lines))
+                      - len(str(total_lines)) - 1)
+        print("{} {} {} {} {}".format("SUM", padding, total_files, rest, total_lines))
+        print("-" * line_width)
 
 
 if __name__ == "__main__":
@@ -295,6 +294,8 @@ if __name__ == "__main__":
                       help="Sort lines by file extensions")
     parser.add_option("-z", "--include-zero", action="store_true", dest="zero", default=False,
                       help="Include files with zero lines")
+    parser.add_option("-g", "--graph", action="store_true", dest="graph", default=False,
+                      help="Graph the results **(Experimental Feature)**")
     options, args = parser.parse_args()
     ignore_list = get_ignore_list()
     path = options.path
