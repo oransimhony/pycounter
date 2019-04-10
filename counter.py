@@ -2,6 +2,8 @@ from os import listdir
 from os.path import isdir, isfile, join
 from optparse import OptionParser
 import sys
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -94,9 +96,8 @@ def get_name(extension):
 def get_ignore_list():
     try:
         with open(".countignore", "r") as f:
-            return [line.strip() for line in f.readlines()]
+            return [line.strip() for line in f.readlines() if line.strip() != ""]
     except Exception as e:
-        print(e)
         return []
 
 
@@ -261,7 +262,7 @@ def print_totals_ext(extensions, total_lines, total_files, zero):
 
         plt.show()
     else:
-        line_width = 100
+        line_width = 80
         print("-" * line_width)
         header_padding = " " * int((line_width - len("LANGUAGE  FILES LINES")) / 2)
         print("LANGUAGE {} FILES {} LINES".format(header_padding, header_padding))
