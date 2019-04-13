@@ -1,5 +1,7 @@
 # PyCounter
 
+[![GitHub](https://img.shields.io/github/license/oransimhony/pycounter.svg)](https://github.com/oransimhony/pycounter/blob/master/LICENSE)
+
 PyCounter is a script I wrote for counting lines and files in directories.
 
 PyCounter can provide metrics for your projects.
